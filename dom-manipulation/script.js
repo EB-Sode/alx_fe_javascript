@@ -14,8 +14,15 @@ function showRandomQuotes() {
   // choose random quote
   const randomIndex = Math.floor(Math.random() * quotes.length);
   const randomQuote = quotes[randomIndex];
-
   const quotesDisplay = document.getElementById('quoteDisplay');
+
+  if (!quotesDisplay) {
+        quotesDisplay = document.createElement("div");
+        quotesDisplay.id = "quoteDisplay";
+        quotesDisplay.style.marginTop = "20px";
+        document.body.appendChild(quotesDisplay);
+    }
+
   quotesDisplay.innerHTML = `
     <blockquote>"${randomQuote.text}"</blockquote>
     <p><em>— ${randomQuote.category}</em></p>
@@ -28,7 +35,23 @@ function createAddQuoteForm() {
   const categoryValue = document.getElementById('newQuoteCategory').value.trim();
 
   if (quoteValue && categoryValue) {
+
+    // Add quote to array
     quotes.push({ text: quoteValue, category: categoryValue });
+
+    //Create new quote to the array
+    const quotesDisplay = document.getElementById("quotesDisplay")
+
+    const blockquote = document.createElement("blockquote")
+    blockquote.textContent = quoteValue;
+
+    const category = document.createElement('p')
+    category.innerHTML = categoryValue;
+
+    quotesDisplay.appendChild(blockquote);
+    quotesDisplay.appendChild(category);
+
+
     alert("Quote added successfully!");
     document.getElementById('newQuoteText').value = '';
     document.getElementById('newQuoteCategory').value = '';
@@ -39,4 +62,4 @@ function createAddQuoteForm() {
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
-document.getElementById('addQuote').addEventListener('click', addQuote);
+document.getElementById('addQuote').addEventListener('click', createAddQuoteForm);
