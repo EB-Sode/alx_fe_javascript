@@ -23,7 +23,7 @@ function showRandomQuotes() {
 }
 
 // Add new quote and category
-function addQuote() {
+function createAddQuoteForm() {
   const quoteValue = document.getElementById('newQuoteText').value.trim();
   const categoryValue = document.getElementById('newQuoteCategory').value.trim();
 
@@ -39,4 +39,4 @@ function addQuote() {
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
-document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
+document.getElementById('addQuote').addEventListener('click', addQuote);
