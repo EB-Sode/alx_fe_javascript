@@ -67,8 +67,57 @@ function showConflictModal(conflict) {
     });
 }
 // Fetch quotes from mock API
-async function fetchQuotesFromServer() {
+// async function fetchQuotesFromServer() {
+//     try {
+//         const res = await fetch(API_URL);
+//         const data = await res.json();
+
+//         const serverQuotes = data.slice(0, 10).map((item, index) => ({
+//             text: item.title.charAt(0).toUpperCase() + item.title.slice(1) + ".",
+//             category: `Category ${index % 3 + 1}`
+//         }));
+
+//         let updatedQuotes = [...quotes];
+//         let conflicts = [];
+
+//         serverQuotes.forEach(serverQuote => {
+//             const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
+//             if (existingIndex !== -1) {
+//                 if (JSON.stringify(updatedQuotes[existingIndex]) !== JSON.stringify(serverQuote)) {
+//                     conflicts.push({ local: updatedQuotes[existingIndex], server: serverQuote, index: existingIndex });
+//                 }
+//             } else {
+//                 updatedQuotes.push(serverQuote);
+//             }
+//         });
+
+//         if (conflicts.length > 0) {
+//             showNotification(`⚠ ${conflicts.length} conflicts detected. Auto-resolving by default...`);
+//             addUpdateMessage(`Resolved ${conflicts.length} conflicts from server.`);
+
+//              for (const c of conflicts) {
+//                 // Wait for user to resolve each conflict
+//                 const resolvedQuote = await showConflictModal(c);
+//                 updatedQuotes[c.index] = resolvedQuote;
+//             }
+//         } else {
+//             showNotification("✅ Quotes updated from server.");
+//             addUpdateMessage("No new quotes or conflicts detected.");
+//         }
+
+//         quotes = updatedQuotes;
+//         saveQuotes();
+//         populateCategories();
+//         // displayQuotes(quotes);
+
+//     } catch (error) {
+//         console.error("Error fetching quotes:", error);
+//     }
+// }
+
+async function syncQuotes() {
     try {
+        // 1. Get server quotes
         const res = await fetch(API_URL);
         const data = await res.json();
 
@@ -80,6 +129,7 @@ async function fetchQuotesFromServer() {
         let updatedQuotes = [...quotes];
         let conflicts = [];
 
+        // 2. Compare server quotes with local
         serverQuotes.forEach(serverQuote => {
             const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
             if (existingIndex !== -1) {
@@ -90,30 +140,35 @@ async function fetchQuotesFromServer() {
                 updatedQuotes.push(serverQuote);
             }
         });
-
         if (conflicts.length > 0) {
             showNotification(`⚠ ${conflicts.length} conflicts detected. Auto-resolving by default...`);
             addUpdateMessage(`Resolved ${conflicts.length} conflicts from server.`);
 
-             for (const c of conflicts) {
-                // Wait for user to resolve each conflict
+            // 3. Resolve conflicts manually
+            for (const c of conflicts) {
                 const resolvedQuote = await showConflictModal(c);
                 updatedQuotes[c.index] = resolvedQuote;
             }
-        } else {
-            showNotification("✅ Quotes updated from server.");
-            addUpdateMessage("No new quotes or conflicts detected.");
-        }
 
+            // 4. Push any missing local quotes to server
+            for (const localQuote of quotes) {
+                const existsOnServer = serverQuotes.some(sq => sq.text === localQuote.text);
+                if (!existsOnServer) {
+                    await postQuote(localQuote);
+                }
+            }
+        }
+        // 5. Save & update UI
         quotes = updatedQuotes;
         saveQuotes();
         populateCategories();
-        // displayQuotes(quotes);
+        showNotification("🔄 Quotes synced successfully.");
 
     } catch (error) {
-        console.error("Error fetching quotes:", error);
+        console.error("Error syncing quotes:", error);
     }
 }
+
 
 // Post new quote to mock API
 async function postQuote(newQuote) {
@@ -305,11 +360,11 @@ function clearAllQuotes() {
 
 // Call once when page loads
 populateCategories();
-fetchQuotesFromServer();
+syncQuotes();
 // displayQuotes(quotes);
 
 // Periodic fetch to simulate live updates
-setInterval(fetchQuotesFromServer, 200000); // every 200 seconds
+setInterval(syncQuotes, 200000);
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
@@ -317,5 +372,6 @@ document.getElementById('addQuote').addEventListener('click', createAddQuoteForm
 document.getElementById('exportQuotes').addEventListener('click', exportQuotes);
 document.getElementById('displayAll').addEventListener('click', () => displayQuotes(quotes));
 document.getElementById('categoryFilter').addEventListener('click', populateCategories);
+document.getElementById('syncQuotesBtn').addEventListener('click', syncQuotes);
 document.getElementById('clearQuotes').addEventListener('click', clearAllQuotes);
 
