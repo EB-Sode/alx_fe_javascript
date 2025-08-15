@@ -22,37 +22,16 @@ function showNotification(message) {
 }
 
 // Fetch quotes from mock API
-async function fetchQuotes() {
+async function fetchQuotesFromServer() {
     try {
         const res = await fetch(API_URL);
         const data = await res.json();
-
-        // Simulate categories and text
-        // quotes = data.slice(0, 10).map((item, index) => ({
-        //     text: item.title,
-        //     category: `Category ${index % 3 + 1}` // simulate categories
-        // }));
 
         // Simulate categories and text
         const serverQuotes = data.slice(0, 10).map((item, index) => ({
             text: item.title.charAt(0).toUpperCase() + item.title.slice(1) + ".",
             category: `Category ${index % 3 + 1}`
         }));
-
-        // // Conflict resolution: server data replaces local duplicates
-        // const updatedQuotes = [...quotes];
-
-        // serverQuotes.forEach(serverQuote => {
-        //     const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
-
-        //     if (existingIndex !== -1) {
-        //         // Replace local quote with server version 
-        //         updatedQuotes[existingIndex] = serverQuote;
-        //     } else {
-        //         // Add new server quote
-        //         updatedQuotes.push(serverQuote);
-        //     }
-        // });
 
          let updatedQuotes = [...quotes];
         let conflicts = [];
@@ -76,7 +55,10 @@ async function fetchQuotes() {
                 // Auto resolve to server by default
                 updatedQuotes[c.index] = c.server;
                 // Show modal for manual resolution (optional)
-                showConflictModal(c);
+                function showConflictModal(conflict) {
+                    alert(`Conflict detected:\nLocal: ${conflict.local.text}\nServer: ${conflict.server.text}`);
+                }
+                showConflictModal()
             });
         } else {
             showNotification("✅ Quotes updated from server.");
@@ -109,8 +91,6 @@ async function postQuote(newQuote) {
     }
 }
 
-
-
 function showRandomQuotes() {
   if (quotes.length === 0) {
     alert("You need to input a quote first!");
@@ -123,7 +103,9 @@ function showRandomQuotes() {
   const quotesDisplay = document.getElementById('quoteDisplay');
 
   if (!quotesDisplay) {
-        document.body.appendChild(quotesDisplay);
+        const newDiv = document.createElement('div');
+        newDiv.id = 'quoteDisplay';
+        document.body.appendChild(newDiv);
     }
 
   quotesDisplay.innerHTML = `
@@ -180,6 +162,8 @@ function createAddQuoteForm() {
     document.getElementById('newQuoteText').value = '';
     document.getElementById('newQuoteCategory').value = '';
 
+    populateCategories()
+
   } else {
     alert("Please fill all fields");
   }
@@ -201,17 +185,6 @@ function exportQuotes() {
   // Cleanup
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-function importFromJsonFile(event) {
-    const fileReader = new FileReader();
-    fileReader.onload = function(event) {
-        const importedQuotes = JSON.parse(event.target.result);
-        quotes.push(...importedQuotes);
-        saveQuotes();
-        alert('Quotes imported successfully!');
-    };
-    fileReader.readAsText(event.target.files[0]);
 }
 
 function importFromJsonFile(event) {
@@ -279,12 +252,12 @@ function filterQuotes() {
 };
 
 // Call once when page loads
-// populateCategories();
-// fetchQuotes();
+populateCategories();
+fetchQuotesFromServer();
 // displayQuotes(quotes);
 // Periodic fetch to simulate live updates
 
-setInterval(fetchQuotes, 10000); // every 10 seconds
+setInterval(fetchQuotesFromServer, 10000); // every 10 seconds
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
