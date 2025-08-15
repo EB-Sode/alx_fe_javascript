@@ -21,78 +21,51 @@ function showNotification(message) {
     }, 5000);
 }
 
-// Fetch quotes from mock API
-// async function fetchQuotesFromServer() {
-//     try {
-//         const res = await fetch(API_URL);
-//         const data = await res.json();
-
-//         // Simulate categories and text
-//         const serverQuotes = data.slice(0, 10).map((item, index) => ({
-//             text: item.title.charAt(0).toUpperCase() + item.title.slice(1) + ".",
-//             category: `Category ${index % 3 + 1}`
-//         }));
-
-//          let updatedQuotes = [...quotes];
-//         let conflicts = [];
-
-//         serverQuotes.forEach(serverQuote => {
-//             const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
-//             if (existingIndex !== -1) {
-//                 if (JSON.stringify(updatedQuotes[existingIndex]) !== JSON.stringify(serverQuote)) {
-//                     // Conflict found
-//                     conflicts.push({ local: updatedQuotes[existingIndex], server: serverQuote, index: existingIndex });
-//                 }
-//             } else {
-//                 updatedQuotes.push(serverQuote);
-//             }
-//         });
-
-//         if (conflicts.length > 0) {
-
-//             // Ask user if they want manual or auto resolve
-//             showNotification(`⚠ ${conflicts.length} conflicts detected. Using server version by default.`);
-//             conflicts.forEach(c => {
-//                 // Auto resolve to server by default
-//                 updatedQuotes[c.index] = c.server;
-
-//                 // Show modal for manual resolution 
-//                 function showConflictModal(conflict) {
-//                     alert(`Conflict detected:\nLocal: ${conflict.local.text}\nServer: ${conflict.server.text}`);
-//                 }
-//                 showConflictModal(c);
-
-//             });
-//         } else {
-//             showNotification("✅ Quotes updated from server.");
-//         }
-
-//         quotes = updatedQuotes;
-
-//         saveQuotes();
-//         populateCategories();
-//         // displayQuotes(quotes);
-//         console.log("Quotes fetched from API:", serverQuotes);
-//         console.log("All quotes now:", quotes);
-//     } catch (error) {
-//         console.error("Error fetching quotes:", error);
-//     }
-// }
-
-
-
-// Modal-based conflict resolution (simple version)
-
-// Utility: log update/conflict messages to the UL
-function logUpdateMessage(message) {
-    const updateMessages = document.getElementById("updateMessages");
-    updateMessages.style.display = "block";
-
-    const li = document.createElement("li");
-    li.textContent = `${new Date().toLocaleTimeString()} — ${message}`;
-    updateMessages.appendChild(li);
+// Helper to add messages to the updateMessages <ul>
+function addUpdateMessage(msg) {
+    const ul = document.getElementById('updateMessages');
+    const li = document.createElement('li');
+    li.textContent = msg;
+    ul.appendChild(li);
+    ul.style.display = 'block';
+    // Optionally auto-hide after some time
+    setTimeout(() => {
+        li.remove();
+        if (ul.children.length === 0) ul.style.display = 'none';
+    }, 7000);
 }
 
+//Show conflict choice
+function showConflictModal(conflict) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('conflictModal');
+        const details = document.getElementById('conflictDetails');
+        modal.style.display = 'block';
+
+        details.innerHTML = `
+            <strong>Local:</strong> "${conflict.local.text}" (<em>${conflict.local.category}</em>)<br>
+            <strong>Server:</strong> "${conflict.server.text}" (<em>${conflict.server.category}</em>)
+        `;
+
+        function keepLocal() {
+            modal.style.display = 'none';
+            cleanup();
+            resolve(conflict.local);
+        }
+        function keepServer() {
+            modal.style.display = 'none';
+            cleanup();
+            resolve(conflict.server);
+        }
+        function cleanup() {
+            document.getElementById('keepLocal').removeEventListener('click', keepLocal);
+            document.getElementById('keepServer').removeEventListener('click', keepServer);
+        }
+
+        document.getElementById('keepLocal').addEventListener('click', keepLocal);
+        document.getElementById('keepServer').addEventListener('click', keepServer);
+    });
+}
 // Fetch quotes from mock API
 async function fetchQuotesFromServer() {
     try {
@@ -120,28 +93,28 @@ async function fetchQuotesFromServer() {
 
         if (conflicts.length > 0) {
             showNotification(`⚠ ${conflicts.length} conflicts detected. Auto-resolving by default...`);
-            logUpdateMessage(`${conflicts.length} conflict(s) detected.`);
+            addUpdateMessage(`Resolved ${conflicts.length} conflicts from server.`);
 
-            conflicts.forEach(c => {
-                const resolvedQuote = showConflictModal(c);
+             for (const c of conflicts) {
+                // Wait for user to resolve each conflict
+                const resolvedQuote = await showConflictModal(c);
                 updatedQuotes[c.index] = resolvedQuote;
-                logUpdateMessage(`Conflict resolved for "${c.local.text}". Kept ${resolvedQuote === c.server ? "SERVER" : "LOCAL"} version.`);
-            });
+            }
         } else {
             showNotification("✅ Quotes updated from server.");
-            logUpdateMessage("Quotes updated from server without conflicts.");
+            addUpdateMessage("No new quotes or conflicts detected.");
         }
 
         quotes = updatedQuotes;
         saveQuotes();
         populateCategories();
-        displayQuotes(quotes);
+        // displayQuotes(quotes);
 
     } catch (error) {
         console.error("Error fetching quotes:", error);
-        logUpdateMessage("Error fetching quotes from server.");
     }
 }
+
 // Post new quote to mock API
 async function postQuote(newQuote) {
     try {
@@ -318,13 +291,25 @@ function filterQuotes() {
     }
 };
 
+function clearAllQuotes() {
+    if (confirm("Are you sure you want to delete ALL quotes? This cannot be undone.")) {
+        quotes = [];
+        localStorage.removeItem('quotes');
+        displayQuotes(quotes);
+        populateCategories();
+        sessionStorage.removeItem('lastQuote');
+        showNotification("🗑 All quotes have been cleared.");
+    }
+}
+
+
 // Call once when page loads
 populateCategories();
 fetchQuotesFromServer();
 // displayQuotes(quotes);
 
 // Periodic fetch to simulate live updates
-setInterval(fetchQuotesFromServer, 10000); // every 10 seconds
+setInterval(fetchQuotesFromServer, 200000); // every 200 seconds
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
@@ -332,4 +317,5 @@ document.getElementById('addQuote').addEventListener('click', createAddQuoteForm
 document.getElementById('exportQuotes').addEventListener('click', exportQuotes);
 document.getElementById('displayAll').addEventListener('click', () => displayQuotes(quotes));
 document.getElementById('categoryFilter').addEventListener('click', populateCategories);
+document.getElementById('clearQuotes').addEventListener('click', clearAllQuotes);
 
