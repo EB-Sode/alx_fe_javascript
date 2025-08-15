@@ -22,25 +22,96 @@ function showNotification(message) {
 }
 
 // Fetch quotes from mock API
+// async function fetchQuotesFromServer() {
+//     try {
+//         const res = await fetch(API_URL);
+//         const data = await res.json();
+
+//         // Simulate categories and text
+//         const serverQuotes = data.slice(0, 10).map((item, index) => ({
+//             text: item.title.charAt(0).toUpperCase() + item.title.slice(1) + ".",
+//             category: `Category ${index % 3 + 1}`
+//         }));
+
+//          let updatedQuotes = [...quotes];
+//         let conflicts = [];
+
+//         serverQuotes.forEach(serverQuote => {
+//             const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
+//             if (existingIndex !== -1) {
+//                 if (JSON.stringify(updatedQuotes[existingIndex]) !== JSON.stringify(serverQuote)) {
+//                     // Conflict found
+//                     conflicts.push({ local: updatedQuotes[existingIndex], server: serverQuote, index: existingIndex });
+//                 }
+//             } else {
+//                 updatedQuotes.push(serverQuote);
+//             }
+//         });
+
+//         if (conflicts.length > 0) {
+
+//             // Ask user if they want manual or auto resolve
+//             showNotification(`⚠ ${conflicts.length} conflicts detected. Using server version by default.`);
+//             conflicts.forEach(c => {
+//                 // Auto resolve to server by default
+//                 updatedQuotes[c.index] = c.server;
+
+//                 // Show modal for manual resolution 
+//                 function showConflictModal(conflict) {
+//                     alert(`Conflict detected:\nLocal: ${conflict.local.text}\nServer: ${conflict.server.text}`);
+//                 }
+//                 showConflictModal(c);
+
+//             });
+//         } else {
+//             showNotification("✅ Quotes updated from server.");
+//         }
+
+//         quotes = updatedQuotes;
+
+//         saveQuotes();
+//         populateCategories();
+//         // displayQuotes(quotes);
+//         console.log("Quotes fetched from API:", serverQuotes);
+//         console.log("All quotes now:", quotes);
+//     } catch (error) {
+//         console.error("Error fetching quotes:", error);
+//     }
+// }
+
+
+
+// Modal-based conflict resolution (simple version)
+
+function showConflictModal(conflict) {
+    const userChoice = confirm(
+        `Conflict detected:\n\n` +
+        `Local: "${conflict.local.text}" (Category: ${conflict.local.category})\n` +
+        `Server: "${conflict.server.text}" (Category: ${conflict.server.category})\n\n` +
+        `Click OK to use SERVER version, or Cancel to keep LOCAL version.`
+    );
+    return userChoice ? conflict.server : conflict.local;
+}
+
+// Fetch   quotes from mock API
 async function fetchQuotesFromServer() {
     try {
         const res = await fetch(API_URL);
         const data = await res.json();
 
-        // Simulate categories and text
         const serverQuotes = data.slice(0, 10).map((item, index) => ({
             text: item.title.charAt(0).toUpperCase() + item.title.slice(1) + ".",
             category: `Category ${index % 3 + 1}`
         }));
 
-         let updatedQuotes = [...quotes];
+        let updatedQuotes = [...quotes];
         let conflicts = [];
 
+        // Compare server data with local
         serverQuotes.forEach(serverQuote => {
             const existingIndex = updatedQuotes.findIndex(q => q.text === serverQuote.text);
             if (existingIndex !== -1) {
                 if (JSON.stringify(updatedQuotes[existingIndex]) !== JSON.stringify(serverQuote)) {
-                    // Conflict found
                     conflicts.push({ local: updatedQuotes[existingIndex], server: serverQuote, index: existingIndex });
                 }
             } else {
@@ -49,32 +120,29 @@ async function fetchQuotesFromServer() {
         });
 
         if (conflicts.length > 0) {
-            // Ask user if they want manual or auto resolve
-            showNotification(`⚠ ${conflicts.length} conflicts detected. Using server version by default.`);
+            showNotification(`⚠ ${conflicts.length} conflicts detected. Auto-resolving by default...`);
+
             conflicts.forEach(c => {
-                // Auto resolve to server by default
-                updatedQuotes[c.index] = c.server;
-                // Show modal for manual resolution (optional)
-                function showConflictModal(conflict) {
-                    alert(`Conflict detected:\nLocal: ${conflict.local.text}\nServer: ${conflict.server.text}`);
-                }
-                showConflictModal()
+                // Ask user to manually choose
+                const resolvedQuote = showConflictModal(c);
+                updatedQuotes[c.index] = resolvedQuote;
             });
         } else {
             showNotification("✅ Quotes updated from server.");
         }
 
         quotes = updatedQuotes;
-
         saveQuotes();
         populateCategories();
-        // displayQuotes(quotes);
+        displayQuotes(quotes);
+
         console.log("Quotes fetched from API:", serverQuotes);
         console.log("All quotes now:", quotes);
     } catch (error) {
         console.error("Error fetching quotes:", error);
     }
 }
+
 // Post new quote to mock API
 async function postQuote(newQuote) {
     try {
