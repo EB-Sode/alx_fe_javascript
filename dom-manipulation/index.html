@@ -6,6 +6,9 @@
   <title>Dynamic Quote Generator</title>
 </head>
 <body>
+
+
+
 <h1>Dynamic Quote Generator</h1>
 
 <div id="quoteDisplay"></div>
@@ -29,6 +32,38 @@
 <select id="categoryFilter" title="Filter quotes by category" onchange="filterQuotes()">
     <option value="all">All Categories</option>
 </select>
+<div>
+  <button id="displayAll">Display quotes</button>
+</div>
+  <!-- Notification area -->
+<div id="notification" style="
+    display: none;
+    background-color: #fffae6;
+    padding: 10px;
+    border: 1px solid #ffd966;
+    margin-bottom: 10px;
+    font-size: 14px;
+">
+</div>
+
+<!-- Manual conflict resolution modal -->
+<div id="conflictModal" style="
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    padding: 15px;
+    width: 300px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+">
+    <h3>Conflict Detected</h3>
+    <p>Which version do you want to keep?</p>
+    <div id="conflictDetails" style="margin-bottom: 10px;"></div>
+    <button id="keepLocal">Keep Local</button>
+    <button id="keepServer">Keep Server</button>
+</div>
 
   <script src="script.js"></script> 
 </body>
