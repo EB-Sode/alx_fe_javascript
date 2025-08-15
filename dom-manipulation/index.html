@@ -26,7 +26,10 @@
     <label for="importFile">Import Quotes (JSON):</label>
     <input type="file" id="importFile" accept=".json" title="Select a JSON file to import quotes" placeholder="Choose JSON file" onchange="importFromJsonFile(event)" />
 </div>
+<select id="categoryFilter" title="Filter quotes by category" onchange="filterQuotes()">
+    <option value="all">All Categories</option>
+</select>
 
-  <script src="script.js"></script>
+  <script src="script.js"></script> 
 </body>
 </html>

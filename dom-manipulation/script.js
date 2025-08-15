@@ -58,6 +58,16 @@ function createAddQuoteForm() {
     quotesDisplay.appendChild(category);
     alert("Quote added successfully!");
 
+    // Check if the category is new and add it to the dropdown
+    const categoryFilter = document.getElementById('categoryFilter');
+    const existingCategories = [...categoryFilter.options].map(opt => opt.value);
+    if (!existingCategories.includes(categoryValue)) {
+      const option = document.createElement('option');
+      option.value = categoryValue;
+      option.textContent = categoryValue;
+      categoryFilter.appendChild(option);
+    }
+    
     // Also save this as last viewed in sessionStorage
     sessionStorage.setItem('lastQuote', JSON.stringify({ text: quoteValue, category: categoryValue }));
 
@@ -88,28 +98,87 @@ function exportQuotes() {
 }
 
 function importFromJsonFile(event) {
-const fileReader = new FileReader();
-fileReader.onload = function(event) {
-    const importedQuotes = JSON.parse(event.target.result);
-    quotes.push(...importedQuotes);
-    saveQuotes();
-    alert('Quotes imported successfully!');
-};
-fileReader.readAsText(event.target.files[0]);
+    const fileReader = new FileReader();
+    fileReader.onload = function(event) {
+        const importedQuotes = JSON.parse(event.target.result);
+        quotes.push(...importedQuotes);
+        saveQuotes();
+        alert('Quotes imported successfully!');
+    };
+    fileReader.readAsText(event.target.files[0]);
 }
 
 function importFromJsonFile(event) {
-const fileReader = new FileReader();
-fileReader.onload = function(event) {
-    const importedQuotes = JSON.parse(event.target.result);
-    quotes.push(...importedQuotes);
-    saveQuotes();
-    alert('Quotes imported successfully!');
-};
-fileReader.readAsText(event.target.files[0]);
+    const fileReader = new FileReader();
+    fileReader.onload = function(event) {
+        const importedQuotes = JSON.parse(event.target.result);
+        quotes.push(...importedQuotes);
+        saveQuotes();
+        alert('Quotes imported successfully!');
+    };
+    fileReader.readAsText(event.target.files[0]);
 }
+
+// Function to add options to the select category
+function populateCategories() {
+    const categoryFilter = document.getElementById('categoryFilter');
+
+        // Extract unique categories from quotes
+    const categories = [...new Set(quotes.map(q =>q.category))]
+
+    
+    // Clear old categories (except "All Categories")
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+
+        //add new options
+    categories.forEach(category => {
+        const option = document.createElement('option')
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+
+function displayQuotes(quotesToDisplay) {
+    const quotesDisplay = document.getElementById('quoteDisplay');
+    quotesDisplay.innerHTML = ''; // Clear old quotes
+
+    if (quotesToDisplay.length === 0) {
+        quotesDisplay.innerHTML = '<p>No quotes available.</p>';
+        return;
+    }
+
+    quotesToDisplay.forEach(q => {
+        const blockquote = document.createElement('blockquote');
+        blockquote.textContent = q.text;
+
+        const category = document.createElement('p');
+        category.innerHTML = `<em>${q.category}</em>`;
+
+        quotesDisplay.appendChild(blockquote);
+        quotesDisplay.appendChild(category);
+    });
+}
+        
+function filterQuotes() {
+    const selectedCategory = document.getElementById('categoryFilter').value;
+
+    if (selectedCategory === "all") {
+        displayQuotes(quotes);
+        savequotes();
+    } else {
+        const filtered = quotes.filter(q => q.category === selectedCategory);
+        displayQuotes(filtered);
+    }
+};
+
+// Call once when page loads
+populateCategories();
+
+
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuotes);
 document.getElementById('addQuote').addEventListener('click', createAddQuoteForm);
 document.getElementById('exportQuotes').addEventListener('click', exportQuotes);
+// document.getElementById('categoryFilter').addEventListener('click', populateCategories);
 
